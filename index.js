@@ -1,46 +1,58 @@
-const yargs = require('yargs')
-const pkg = require('./package')
-const {addNote, printNotes, removeNote } = require('./notes.controller')
+const express = require('express')
+const chalk = require('chalk')
+const path = require("path");
+const {addNote, getNotes, removeNote, editNote} = require("./notes.controller");
 
-yargs.version(pkg.version)
+const port = 3000
+// const basePath = path.join(__dirname, 'pages')
+const app = express()
 
+app.set('view engine', 'ejs')
+app.set('views', 'pages')
 
-yargs.command({
-    command: 'add',
-    describe: 'add node',
-    builder: {
-      title: {
-          type: 'string',
-          describe: 'Note title',
-          demandOption: true
-      }
-    },
-    async handler({title}){
-        await addNote(title)
-    }
+app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.json())
+app.use(express.urlencoded({extended: true}))
+
+app.get('/', async (req, res)=>{
+    res.render('index', {
+        title: 'Express page',
+        notes: await getNotes(),
+        created: false
+    })
 })
 
-yargs.command({
-    command: 'list',
-    describe: 'get nodes list',
-    async handler(){
-        console.log(await printNotes())
-    }
+app.post('/', async (req, res)=>{
+    await addNote(req.body.title)
+    res.render('index',{
+        title: 'Express page',
+        notes: await getNotes(),
+        created: true
+    })
 })
 
-yargs.command({
-    command: 'remove',
-    describe: 'Remove note by id',
-    builder: {
-        id: {
-            type: 'number',
-            describe: 'Note id',
-            demandOption: true
-        }
-    },
-    async handler({id}){
-        await removeNote(id)
-    }
+app.delete('/:id', async (req, res)=>{
+    const id = req.params.id
+    await removeNote(id)
+    res.render('index',{
+        title: 'Express page',
+        notes: await getNotes(),
+        created: false
+    })
 })
 
-yargs.parse()
+app.put('/:id', async (req, res)=>{
+    const id = req.params.id
+    const {title} = req.body
+    await editNote(id, title)
+
+    res.render('index',{
+        title: 'Express page',
+        notes: await getNotes(),
+        created: false
+    })
+})
+
+app.listen(port, ()=>{
+    console.log( chalk.green(`Server start on port ${port}...`))
+})

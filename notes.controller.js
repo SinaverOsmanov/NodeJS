@@ -18,7 +18,6 @@ async function getNotes() {
     const notes = await fs.readFile(notesPath, {encoding: 'utf8'})
 
     return Array.isArray(JSON.parse(notes)) ? JSON.parse(notes): []
-
 }
 
 async function writeNotesToDB(notes){
@@ -31,9 +30,14 @@ async function writeNotesToDB(notes){
 
 async function removeNote(id) {
     const notes = await getNotes()
-    const filteredNotes = notes.filter(note => Number(note.id) !== id)
-    // почему filteredNotes объект ???
+    const filteredNotes = notes.filter(note => note.id !== id)
     await writeNotesToDB(filteredNotes)
+}
+
+async function editNote(id, title) {
+    const notes = await getNotes()
+    const mappedNotes = notes.map(note => note.id === id ? {...note, title: title}: note)
+    await writeNotesToDB(mappedNotes)
 }
 
 async function printNotes(){
@@ -42,5 +46,5 @@ async function printNotes(){
 }
 
 module.exports = {
-    addNote, printNotes, removeNote
+    addNote, printNotes, removeNote, getNotes, editNote
 }
